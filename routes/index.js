@@ -120,7 +120,7 @@ router.get('/board', (req, res) => {
                 res.statusCode(500);
             }
             else {
-                res.render('index', {user: req.session.user, tasks: tasks});
+                res.render('index', {user: req.session.user, tasks: tasks, ownProject: req.query.project});
             }
         });
     }
@@ -176,6 +176,17 @@ router.post('/create', upload.array('files', 4), (req, res) => {
                     console.error(err);
                     res.sendStatus(500);
                 }
+                else {
+                    Project.findOne({ownProject: req.body.ownProject},function (err, project) {
+                        if (err) {
+                            console.error(err);
+                        }
+                        else {
+                            project.tasks.push(object)
+                        }
+                    })
+                }
+
                 object.dateOfcreation = req.app.locals.performDate(object.dateOfcreation);
                 let template = pug.renderFile(path.join(__dirname, '../models/taskCard.pug'), {task: object});
                 res.status(201).json({html: template});
@@ -189,6 +200,15 @@ router.post('/create', upload.array('files', 4), (req, res) => {
         }, (err, object) => {
             if (err) {
                 console.error(err);
+            } else {
+                project.findOne({ownProject: req.body.ownProject},function (err, project) {
+                    if (err) {
+                        console.error(err);
+                    }
+                    else {
+                        project.tasks.push(object)
+                    }
+                })
             }
             object.date = req.app.locals.performDate(object.dateOfcreation);
             let template = pug.renderFile(path.join(__dirname, '../models/taskCard.pug'), {task: object});

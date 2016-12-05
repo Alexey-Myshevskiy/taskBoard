@@ -94,7 +94,7 @@ block content
                     h4.modal-title Новая задача
                 .modal-body
                     form(id="create-form" enctype="multipart/form-data" class="form-horizontal")
-
+                        input(type="hidden" name="ownProject" value=ownProject)
                         label(for='description') Описание задачи
                         textarea#description.form-control(minlength='5', maxlength='512', required='' name="description")
 
