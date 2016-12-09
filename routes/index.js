@@ -51,7 +51,7 @@ router.get('/register', (req,res)=>{
     "use strict";
     res.render("registerform");
 });
-router.post('/registerme', (req, res,) => {
+router.post('/registerme', (req, res) => {
     /*
      const UserModel = new Schema({
      name:  String,
