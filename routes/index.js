@@ -438,7 +438,7 @@ router.get('/task/:id', (req, res, next) => {
 
     Task.findById(req.params.id, (err, doc) => {
         if (err) next(err);
-        res.render('taskdesk', {task: doc});
+        res.render('taskdesk', {task: doc, user: req.session.user});
     })
 });
 router.post('/removeTask', (req, res) => {
