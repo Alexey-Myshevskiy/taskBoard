@@ -16,13 +16,12 @@ block content
             .col-md-5
                 label.btn-succes(for="members") Учасники проекта
                 select.btn-succes(id="members")
-                    option #{user.email}
-                        if projectUsers
-                            for use in projectUsers
-                                option #{use.email}
-                        else
-                            option
-                                |None
+                    if projectUsers
+                        for use in projectUsers
+                            option #{use.email}
+                    else
+                        option
+                            |None
             .col-md-5
             form.form-inline#search
                 label.btn-succes(for="searchInput") Добавить учасника
@@ -220,13 +219,14 @@ block content
             $("#search").on('submit', function (search) {
                 $.ajax({
                     method: "POST",
-                    url: "/search",
+                    url: "/searchUser",
                     data: $(this).serialize(),
                     processData: false
                 })
-                        .done(function () {
+                        .done(function (emailInfo) {
                             alertify.success("Учасник добавлен!");
-                            window.location.replace("/board");
+                            $("#members").append("<option>" + emailInfo.emailInfo + "</option>");
+                            console.log(emailInfo.emailInfo);
                         })
                         .fail(function (errInfo) {
                             console.log(errInfo.responseJSON.errInfo);

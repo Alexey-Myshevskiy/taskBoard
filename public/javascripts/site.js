@@ -46,6 +46,21 @@ function removeTask(taskID) {
             window.location.replace('/board?project=' + id.id);
         })
 }
+function executeTask(taskID) {
+    "use strict";
+    $.ajax({
+        method: "POST",
+        url: "/executeTask",
+        data: {id: taskID}
+    })
+        .done(function (successInfo) {
+            $("#execute").html("<h3>Задача в разработке</h3>");
+            alertify.success(successInfo.successInfo);
+        })
+        .fail(function (errInfo) {
+            alertify.error(errInfo.responseJSON.errInfo);
+        })
+}
 function removeProject(projectID) {
     "use strict";
     $.ajax({

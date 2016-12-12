@@ -1,32 +1,44 @@
 extends layout
 block content
-        table.table.table-bordered
-            tr
-                tr.black-text
-                    td Задача #
-                    td #{ task._id }
-                tr.black-text
-                    td Статус:
-                    td #{task.status}
-                tr.black-text
-                    td Приоритет:
-                    td #{task.priority}
-                tr.black-text
-                    td Дата постановки:
-                    td #{performDate(task.dateOfcreation)}
-                tr.black-text
-                    td
-                        a(href='/board?project=' + task.project) Вернуться к проекту
-                    td
-                        a(href="javascript:removeTask('"+task._id+"');" ) Удалить задачу
-        h3 Описание
+    if task.executant_id
+        h3 Задача в разработке
+    else
+        h3#execute
+            a(href="javascript:executeTask('" + task._id + "');" ) Взять задачу
+    table.table.table-bordered
+        tr.black-text
+            td Задача #
+            td #{ task._id }
+        tr.black-text
+            td Статус:
+            td #{task.status}
+        tr.black-text
+            td Приоритет:
+            td #{task.priority}
+        tr.black-text
+            td Дата постановки:
+            td #{performDate(task.dateOfcreation)}
+        tr
+            td
+                a(data-toggle="collapse" href="#collapseDescription" aria-expanded="false" aria-controls="collapseExample") Описание
+            td
+                a(data-toggle="collapse" href="#collapseImages" aria-expanded="false" aria-controls="collapseExample") Вложенные файлы
+        tr.black-text
+            td
+                a(href='/board?project=' + task.project) Вернуться к проекту
+            td
+                a(href="javascript:removeTask('" + task._id + "');" ) Удалить задачу
+    //h4
+        //a(data-toggle="collapse" href="#collapseDescription" aria-expanded="false" aria-controls="collapseExample") Описание
+    .collapse#collapseDescription
         .well !{task.description}
-        a(data-toggle="collapse" href="#collapseExample" aria-expanded="false" aria-controls="collapseExample") Нажмите для просмотра вложенных файлов
-        .collapse#collapseExample
-            div.well
-                if task.images !== []
-                    each val in task.images
-                        img(src="/"+val)
-                        br
-                else
-                    em нет вложенных файлов
+    //h4
+        //a(data-toggle="collapse" href="#collapseImages" aria-expanded="false" aria-controls="collapseExample") Вложенные файлы
+    .collapse#collapseImages
+        div.well
+            if task.images !== []
+                each val in task.images
+                    img(src="/" + val)
+                    br
+            else
+                em нет вложенных файлов

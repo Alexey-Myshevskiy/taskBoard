@@ -1,16 +1,14 @@
-const express = require('express'),
-    router = express.Router(),
-    os = require('os'),
-    fs = require('fs'),
-    path = require('path'),
-    multer = require('multer'),
-    Task = require('../models/Task').Task,
-    User = require('../models/Task').User,
-    Project = require('../models/Task').Project,
-    pug = require('pug'),
-    async = require('async'),
-    underscore = require('underscore'),
-    mongoose = require('mongoose');
+import express from "express";
+import os from "os";
+import fs from "fs";
+import path from "path";
+import multer from "multer";
+import {Task, User, Project} from "../models/Task";
+import pug from "pug";
+import async from "async";
+import underscore from "underscore";
+import mongoose from "mongoose";
+const router = express.Router();
 
 const upload = multer({dest: os.tmpdir()});// save to system tmp dir
 
@@ -114,8 +112,10 @@ router.get('/profile',(req,res)=>{
         User
             .findById(req.session.user._id)
             .populate('projects') // only works if we pushed refs to children
+            .populate('tasks')
             .exec((err, person) => {
                 if (err) next(err);
+                console.log(person);
                 res.render("profile", {user: person});
             });
 
@@ -146,7 +146,6 @@ router.get('/board', (req, res) => {
                                 res.statusCode(500);
                             }
                             else{
-                                console.log(users);
                                 res.render('index', {user: req.session.user, tasks: tasks.tasks, ownerProject: req.query.project, projectUsers: users.users});
                             }
                         });
@@ -441,27 +440,6 @@ router.get('/task/:id', (req, res, next) => {
         res.render('taskdesk', {task: doc, user: req.session.user});
     })
 });
-router.post('/removeTask', (req, res) => {
-    "use strict";
-    if (!req.body.id) res.sendStatus(400);
-    Task.findById(req.body.id, function (err, doc) {
-        var filesArray = doc.images;
-        for (var i = 0; i < filesArray.length; i++) {
-            fs.unlink(path.join(__dirname, '../public/') + filesArray[i], (err) => {
-                res.status(500).json({id: doc.project});
-            });
-        }
-        Task.remove({_id: req.body.id}, function (err) {
-            if (err) {
-                res.status(500).json({id: doc.project});
-            }
-            else {
-                res.status(200).json({id: doc.project});
-            }
-        })
-
-    });
-});
 router.post('/login', (req, res) => {
     "use strict";
     User.findByEmail(req.body.username, (err, user) => {
@@ -482,7 +460,7 @@ router.post('/login', (req, res) => {
         }
     })
 });
-router.post('/search', (req, res) => {
+router.post('/searchUser', (req, res) => {
     "use strict";
     Project.findById(req.body.ownerProject, (err, project) => {
             if (err) {
@@ -490,8 +468,6 @@ router.post('/search', (req, res) => {
             }
             else {
                 if(project.owner_id==req.session.user._id){
-
-
                     //if(project.users.)
                     User.findOne({email : req.body.searchPerson}, (err, user) => {
                         var simmilars = underscore.find(project.users,function (personFind) {
@@ -512,8 +488,7 @@ router.post('/search', (req, res) => {
                                                     res.status(500).json({errInfo: "Ошибка записи проекта!"});
                                                 }
                                                 else {
-
-                                                    res.sendStatus(200);
+                                                    res.status(200).json({emailInfo: req.body.searchPerson});
                                                 }
                                             })
                                         });
@@ -538,7 +513,59 @@ router.post('/search', (req, res) => {
     //if(req.body.ownerProject==req.session.user._id){}
 
 });
-router.post('/newproject', upload.single('cover'), (req, res, next) => {
+router.post('/executeTask', (req, res) => {
+    "use strict"
+    Task.findById(req.body.id, (err, task) => {
+        console.log(task.executant_id);
+        if(!task.executant_id){
+            task.executant_id = req.session.user._id;
+            task.save((err) => {
+                if (err) {
+                    res.status(500).json({errInfo: "Не удалось взять задачу!"});
+                }
+                else {
+                    User
+                        .findById(req.session.user._id)
+                        .populate('tasks')
+                        .exec((err, user) => {
+                            var simmilars = underscore.find(user.tasks,(taskFind) => {
+                                return taskFind._id.toString() === req.body.id.toString()
+                            });
+                            if(!simmilars){
+                                user.tasks.push(req.body.id);
+                                user.save((err) => {
+                                    if (err) {
+                                        res.status(500).json({errInfo: "Не удалось взять задачу!"});
+                                    }
+                                    else {
+                                        res.status(200).json({successInfo: "Задача добавлена в Ваш список задач!"});
+                                    }
+                                });
+                            }
+                            else {
+                                res.status(500).json({errInfo: "Вы уже выполняете эту задачу!"});
+                            }
+                        });
+                }
+            })
+        }
+        else{
+            res.status(500).json({errInfo: "Задача уже выполняется!"});
+        }
+
+
+    })
+
+
+            /*User.findOne({_id: req.session.user._id}, (err, doc) => {
+        doc.tasks.push(req.body.id);
+        doc.save((err, updatedDoc) => {
+            next(err);
+            console.log(updatedDoc);
+        });
+    });*/
+});
+router.post('/newProject', upload.single('cover'), (req, res, next) => {
     "use strict";
     req.checkBody('projectname', 'Invalid postparam').notEmpty().isLength({max: 30});
     req.checkBody('projectdescription', 'Invalid postparam').notEmpty().isLength({max: 255});
@@ -558,8 +585,9 @@ router.post('/newproject', upload.single('cover'), (req, res, next) => {
                         Project.create({
                             owner_id : req.session.user._id,
                             name: req.body.projectname,
+                            cover: 'images/covers/' + newFileName,
                             description: req.body.projectdescription,
-                            cover: 'images/covers/' + newFileName
+                            users: req.session.user._id
                         }, (err, project) => {
                             if (err) {
                                 next(err);
@@ -583,8 +611,9 @@ router.post('/newproject', upload.single('cover'), (req, res, next) => {
         Project.create({
             owner_id : req.session.user._id,
             name: req.body.projectname,
+            cover: 'images/dc.png',
             description: req.body.projectdescription,
-            cover: 'images/dc.png'
+            users: req.session.user._id
         }, (err, project) => {
             if (err) {
                 next(err);
@@ -606,7 +635,27 @@ router.post('/newproject', upload.single('cover'), (req, res, next) => {
 
 
 });
+router.post('/removeTask', (req, res) => {
+    "use strict";
+    if (!req.body.id) res.sendStatus(400);
+    Task.findById(req.body.id, function (err, doc) {
+        var filesArray = doc.images;
+        for (var i = 0; i < filesArray.length; i++) {
+            fs.unlink(path.join(__dirname, '../public/') + filesArray[i], (err) => {
+                res.status(500).json({id: doc.project});
+            });
+        }
+        Task.remove({_id: req.body.id}, function (err) {
+            if (err) {
+                res.status(500).json({id: doc.project});
+            }
+            else {
+                res.status(200).json({id: doc.project});
+            }
+        })
 
+    });
+});
 router.post('/removeProject', (req, res) => {
     "use strict";
     if (!req.body.id) res.sendStatus(400);

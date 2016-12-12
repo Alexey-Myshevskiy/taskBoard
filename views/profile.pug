@@ -53,7 +53,40 @@ block content
                                             a.btn.btn-warning(href='#', role='button' data-toggle="modal" data-target="#projectNEW") Создать
 
                     #tab2.tab-pane.fade.in
-                        h3 This is tab 2
+                        table(class='table task-table' width='100%')
+                            thead
+                                tr
+                                    td(width='25%')
+                                        h4 Задачи
+                                    td(width='25%')
+                                        h4 Описание
+                                    td(width='25%')
+                                        h4 Проект
+                                    td(width='25%')
+                                        h4 Функции
+                            tbody
+                                each v in user.tasks
+                                    tr
+                                        td(width='25%' data-status="waiting").droppable
+                                            div(class="taskCard")
+                                                h2 Задача #
+                                                h3 #{v._id}
+                                                    h4.black-text #{performDate(v.dateOfcreation)}
+                                                a(href="/task/" + v._id) полное описание задачи
+                                        td(width='25%')
+                                            .content
+                                                h5.black-text !{v.description}
+                                        td(width='25%')
+                                            each i in user.projects
+                                                if i._id.toString() == v.project.toString()
+                                                    h3 #{i.name}
+                                        td(width='25%')
+                                            h3
+                                                a(href='/board?project=' + v.project) Перейти к проекту
+                                            h3
+                                                a(href="") Отказаться от задачи
+                                            h3
+                                                a(href="javascript:removeTask('" + v._id + "');" ) Удалить задачу
                     #tab3.tab-pane.fade.in.text-center
                         .btn-pref.btn-group-vertical(role='group', aria-label='...')
                             .btn-group(role='group')
