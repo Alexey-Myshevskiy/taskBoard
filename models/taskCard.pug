@@ -6,10 +6,7 @@ tr
             a(href="javascript:removeTaskList('" + task._id + "');" class="removeTask")
                 button.close(type='button', data-toggle="modal" data-target="#deleteModal")
                     span(aria-hidden='true') ×
-            h2 Задача #
-            br
-            h3 #{task._id}
-
+            h2 Задача # #{task.number}
                 h4 #{task.date}
                 .content
                     h5 #{task.description}

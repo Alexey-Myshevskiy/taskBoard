@@ -379,85 +379,92 @@ router.post('/searchUser', (req, res) => {
 });
 router.post('/createTask', upload.array('files', 4), (req, res, next) => {
     "use strict";
-    if (req.files.length > 0) {
-        let arrayOfTask = [];
-        req.files.forEach((elem) => {
-            arrayOfTask.push((callback) => {
-                fs.readFile(elem.path, (err, content) => {
-                    if (!err) {
-                        fs.writeFile(path.join(__dirname, '../public/images/') + elem.originalname, content, (err) => {
-                            if (err) {
-                                callback(err, null);
-                            }
-                            else {
-                                callback(null, "images/" + elem.originalname);
-                            }
-                        })
+
+    Project.findOne({_id: req.body.ownerProject}, (err, projectForCount) => {
+        if (req.files.length > 0) {
+            let arrayOfTask = [];
+            req.files.forEach((elem) => {
+                arrayOfTask.push((callback) => {
+                    fs.readFile(elem.path, (err, content) => {
+                        if (!err) {
+                            fs.writeFile(path.join(__dirname, '../public/images/') + elem.originalname, content, (err) => {
+                                if (err) {
+                                    callback(err, null);
+                                }
+                                else {
+                                    callback(null, "images/" + elem.originalname);
+                                }
+                            })
+                        }
+                        else {
+                            console.error(err);
+                        }
+                    })
+                });
+            });
+
+            async.parallel(arrayOfTask, (err, results) => {
+                Task.create({
+                    project: req.body.ownerProject,
+                    description: req.body.description,
+                    priority: req.body.priority,
+                    images: results,
+                    number: ++projectForCount.taskcounter
+                }, (err, object) => {
+                    if (err) {
+                        console.error(err);
+                        res.sendStatus(500);
                     }
                     else {
-                        console.error(err);
+                        Project.findOne({_id: req.body.ownerProject}, (err, doc) => {
+                            doc.tasks.push(object);
+                            doc.taskcounter += 1;
+                            doc.save((err) => {
+                                if (err) {
+                                    next(err);
+                                }
+                                else {
+                                    res.status(200);
+                                }
+                            });
+                        })
                     }
-                })
-            });
-        });
+                    object.dateOfcreation = req.app.locals.performDate(object.dateOfcreation);
+                    let template = pug.renderFile(path.join(__dirname, '../models/taskCard.pug'), {task: object});
+                    res.status(201).json({html: template});
+                });
+            })
 
-        async.parallel(arrayOfTask, (err, results) => {
+        } else {
             Task.create({
                 project: req.body.ownerProject,
                 description: req.body.description,
                 priority: req.body.priority,
-                images: results
+                number: ++projectForCount.taskcounter
             }, (err, object) => {
                 if (err) {
                     console.error(err);
-                    res.sendStatus(500);
                 }
                 else {
                     Project.findOne({_id: req.body.ownerProject}, (err, doc) => {
                         doc.tasks.push(object);
+                        doc.taskcounter += 1;
                         doc.save((err) => {
-                            if(err){
-                                next(err);
+                            if (err) {
+                                console.log(err);
                             }
-                            else{
+                            else {
                                 res.status(200);
                             }
                         });
                     })
                 }
-                object.dateOfcreation = req.app.locals.performDate(object.dateOfcreation);
+                object.date = req.app.locals.performDate(object.dateOfcreation);
                 let template = pug.renderFile(path.join(__dirname, '../models/taskCard.pug'), {task: object});
                 res.status(201).json({html: template});
             });
-        })
-
-    } else {
-        Task.create({
-            project: req.body.ownerProject,
-            description: req.body.description,
-            priority: req.body.priority
-        }, (err, object) => {
-            if (err) {
-                console.error(err);
-            }
-            else {
-                Project.findOne({_id: req.body.ownerProject}, (err, doc) => {
-                    doc.tasks.push(object);
-                    doc.save((err) => {
-                        if(err){
-                            console.log(err);
-                        }
-                        else{
-                            res.status(200);
-                        }
-                    });
-                })
-            }
-            object.date = req.app.locals.performDate(object.dateOfcreation);
-            let template = pug.renderFile(path.join(__dirname, '../models/taskCard.pug'), {task: object});
-            res.status(201).json({html: template});
-        });
-    }
+        }
+    });
 });
 router.post('/executeTask', (req, res) => {
     "use strict"

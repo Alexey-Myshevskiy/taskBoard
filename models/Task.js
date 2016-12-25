@@ -13,7 +13,8 @@ const TaskModel = new Schema({
     priority: String,
     images: {type: Array, default: []},
     status: {type: String, default: 'waiting'},
-    dateOfcreation: {type: Date, default: Date.now}
+    dateOfcreation: {type: Date, default: Date.now},
+    number: Number
 });
 
 const UserModel = new Schema({
@@ -39,7 +40,8 @@ const ProjectModel = new Schema({
     dateOfcreation: {type: Date, default: Date.now},
     description: String,
     tasks: [{type: Schema.Types.ObjectId, ref: 'Task'}],
-    users: [{type: Schema.Types.ObjectId, ref: 'User'}]
+    users: [{type: Schema.Types.ObjectId, ref: 'User'}],
+    taskcounter: {type: Number, default: 0}
 });
 //removing Task with Project and personal Task from Users
 ProjectModel.pre('remove', function (next) {

@@ -33,6 +33,8 @@ block content
                                         .caption
                                             h3=val.name
                                             h5=val.description
+                                            h6 Задач создано: #{val.taskcounter}
+                                            h6 В разработке: #{val.tasks.length}
                                             p
                                                 a.btn.btn-warning(href='/board?project=' + val._id, role='button') Перейти к доске проекта
                                             p
